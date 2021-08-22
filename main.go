@@ -13,6 +13,7 @@ import (
 )
 
 const WINNERS_URL = "https://www.mfsr.sk/components/mfsrweb/winners/data-ajax.jsp"
+var c = cron.New()
 
 type StatusJSON struct {
 	Status   int32
@@ -30,7 +31,7 @@ type WinnerJSON []struct {
 type ResponseJSON struct {
 	Code    string `json:"Code"`
 	Village string `json:"Village"`
-	Amount  uint64 `json:"Amount"`
+	Amount  int64 `json:"Amount"`
 	Name    string `json:"Name"`
 }
 
@@ -73,7 +74,7 @@ func getLatestWinners() []ResponseJSON {
 	var arr []ResponseJSON
 
 	for _, s := range winners {
-		var v, _ = strconv.ParseUint(s.Amount, 10, 32)
+		var v, _ = strconv.ParseInt(s.Amount, 10, 32)
 		arr = append(arr, ResponseJSON{Code: s.Code, Village: s.Village, Name: s.Name, Amount: v})
 	}
 
@@ -125,6 +126,7 @@ func GetDbUpdatesJSON(w http.ResponseWriter, req *http.Request) {
 	if len(winners) > 0 {
 		data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: winners})
 		w.Write(data)
+		return
 	}
 	w.Write(data)
 }
@@ -197,18 +199,15 @@ func SumNamesJSON(w http.ResponseWriter, req *http.Request) {
 func GetDbLastUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	winners := GetDbGo()
+	// winners := GetDbGo()
 
-	data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: winners})
+	data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: c.Entry(c.Entries()[0].ID).Prev})
 	w.Write(data)
 }
 
 func GetDbLast24UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
-	winners := GetDb24Update()
-
-	data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: winners})
+	data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: GetDb24Update()})
 	w.Write(data)
 }
 
@@ -218,8 +217,6 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
-	c := cron.New()
 	c.AddFunc("0 0 * * * *", UpdateDbWinners )
 
 	http.HandleFunc("/", NotFoundHandler)
@@ -231,12 +228,13 @@ func main() {
 	http.HandleFunc("/inserts", GetDbInsertsJSON)
 	http.HandleFunc("/24", GetDbLast24UpdateJSON)
 
-	// http.HandleFunc("/lastupdate", GetDbLastUpdateJSON)
+	http.HandleFunc("/cron", GetDbLastUpdateJSON)
 
-	// UpdateDbWinners()
+	UpdateDbWinners()
 
 	c.Start()
+	fmt.Println("Cron - next update "+ ""+" ✅")
 
-	fmt.Println("Server ✅ :5000")
+	fmt.Println("Server http://localhost:5000 ✅")
 	http.ListenAndServe(":5000", nil)
 }

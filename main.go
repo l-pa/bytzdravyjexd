@@ -13,7 +13,8 @@ import (
 )
 
 const WINNERS_URL = "https://www.mfsr.sk/components/mfsrweb/winners/data-ajax.jsp"
-var c = cron.New()
+
+var lastCronUpdate time.Time
 
 type StatusJSON struct {
 	Status   int32
@@ -201,7 +202,7 @@ func GetDbLastUpdateJSON(w http.ResponseWriter, r *http.Request) {
 
 	// winners := GetDbGo()
 
-	data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: c.Entry(c.Entries()[0].ID).Prev})
+	data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: lastCronUpdate})
 	w.Write(data)
 }
 
@@ -217,7 +218,12 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	c.AddFunc("0 0 * * * *", UpdateDbWinners )
+	c := cron.New()
+	c.AddFunc("0 0 9 * * *", func() {
+		UpdateDbWinners()
+		lastCronUpdate = time.Now()
+		fmt.Println("Cron ✅")
+	} )
 
 	http.HandleFunc("/", NotFoundHandler)
 	http.HandleFunc("/msfs", GetWinnersJSON)
@@ -233,7 +239,8 @@ func main() {
 	UpdateDbWinners()
 
 	c.Start()
-	fmt.Println("Cron - next update "+ ""+" ✅")
+	
+	lastCronUpdate = time.Now()
 
 	fmt.Println("Server http://localhost:5000 ✅")
 	http.ListenAndServe(":5000", nil)

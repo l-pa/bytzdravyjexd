@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/robfig/cron/v3"
+	"github.com/go-co-op/gocron"
 )
 
 const WINNERS_URL = "https://www.mfsr.sk/components/mfsrweb/winners/data-ajax.jsp"
@@ -34,6 +34,13 @@ type ResponseJSON struct {
 	Village string `json:"Village"`
 	Amount  int64 `json:"Amount"`
 	Name    string `json:"Name"`
+}
+
+type VillagesJSON struct {
+	Village string
+	TotalAmount  int
+	Lat string
+	Lon string
 }
 
 func getLatestWinners() []ResponseJSON {
@@ -167,6 +174,13 @@ func SumVillagesJSON(w http.ResponseWriter, req *http.Request) {
 		w.Write(data)
 		return
 	} else {
+
+		var a []VillagesJSON
+		for k, v := range villages { 
+			var c = GetDbVillage(k)
+			a = append(a, VillagesJSON{Village: k, TotalAmount: v, Lat: c.lat.String, Lon: c.long.String})
+		}
+
 		data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: villages})
 		w.Write(data)
 	}
@@ -218,12 +232,13 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	c := cron.New()
-	c.AddFunc("0 0 9 * * *", func() {
+	s := gocron.NewScheduler(time.UTC)
+	s.Every(1).Day().At("11:00").Do(func ()  {
 		UpdateDbWinners()
 		lastCronUpdate = time.Now()
 		fmt.Println("Cron ✅")
-	} )
+		
+	})
 
 	http.HandleFunc("/", NotFoundHandler)
 	http.HandleFunc("/msfs", GetWinnersJSON)
@@ -237,11 +252,9 @@ func main() {
 	http.HandleFunc("/cron", GetDbLastUpdateJSON)
 
 	UpdateDbWinners()
-
-	c.Start()
 	
 	lastCronUpdate = time.Now()
-
+	s.StartAsync()
 	fmt.Println("Server http://localhost:5000 ✅")
 	http.ListenAndServe(":5000", nil)
 }

@@ -11,11 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
-
-const DB_FILE_NAME = "slobodajexd.db"
 
 type winners struct {
 	Code   string
@@ -64,13 +61,8 @@ type nominatimResponse []struct {
 }
 
 func UpdateDbWinners() {
-	db, err := gorm.Open(sqlite.Open(DB_FILE_NAME), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
 	var dbWinners []winners
-	var _ = db.Find(&dbWinners)
+	var _ = Db.Find(&dbWinners)
 
 	latestWinners := getLatestWinners()
 
@@ -80,7 +72,7 @@ func UpdateDbWinners() {
 
 	for _, v := range latestWinners {
 
-		var citiesResult = db.First(&cityTmp, "name = ?", v.Village)
+		var citiesResult = Db.First(&cityTmp, "name = ?", v.Village)
 
 		if errors.Is(citiesResult.Error, gorm.ErrRecordNotFound) {
 
@@ -122,23 +114,23 @@ func UpdateDbWinners() {
 			}
 
 			if len(c) > 0 {
-				var _ = db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: true, String: c[0].Lat}, Long: sql.NullString{Valid: true, String: c[0].Lon}})
+				var _ = Db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: true, String: c[0].Lat}, Long: sql.NullString{Valid: true, String: c[0].Lon}})
 			} else {
-				var _ = db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: false}, Long: sql.NullString{Valid: false}})
+				var _ = Db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: false}, Long: sql.NullString{Valid: false}})
 			}
 
 		}
 
-		result := db.First(&winnerTmp, "code = ? AND amount = ?", v.Code, v.Amount)
+		result := Db.First(&winnerTmp, "code = ? AND amount = ?", v.Code, v.Amount)
 
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 
-			result := db.First(&winnerTmp, "code = ?", v.Code)
+			result := Db.First(&winnerTmp, "code = ?", v.Code)
 
-			var _ = db.Create(winners{Name: v.Name, Code: v.Code, Amount: v.Amount, City: v.Village})
+			var _ = Db.Create(winners{Name: v.Name, Code: v.Code, Amount: v.Amount, City: v.Village})
 
 			if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				var _ = db.Create(updates{Code: v.Code, Amount_before: winnerTmp.Amount, Date_Time: time.Now().Format("2006-01-02 15:04:05"), Update_type: "UPDATE"})
+				var _ = Db.Create(updates{Code: v.Code, Amount_before: winnerTmp.Amount, Date_Time: time.Now().Format("2006-01-02 15:04:05"), Update_type: "UPDATE"})
 			}
 		}
 
@@ -148,65 +140,41 @@ func UpdateDbWinners() {
 }
 
 func GetDbWinners() []winners {
-	db, err := gorm.Open(sqlite.Open(DB_FILE_NAME), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
 	var dbWinners []winners
 
-	var _ = db.Find(&dbWinners)
+	var _ = Db.Find(&dbWinners)
 
 	return dbWinners
 }
 
 func GetDbVillage(name string) cities {
-	db, err := gorm.Open(sqlite.Open(DB_FILE_NAME), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
 	var dbVillages cities
 
-	db.First(&dbVillages, "name = ?", name)
+	Db.First(&dbVillages, "name = ?", name)
 
 	return dbVillages
 }
 
 func GetDbUpdates() []updates {
-	db, err := gorm.Open(sqlite.Open(DB_FILE_NAME), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
 	var dbUpdates []updates
 
-	var _ = db.Where("update_type = ?", "UPDATE").Find(&dbUpdates)
+	var _ = Db.Where("update_type = ?", "UPDATE").Find(&dbUpdates)
 
 	return dbUpdates
 }
 
 func GetDbInserts() []updates {
-	db, err := gorm.Open(sqlite.Open(DB_FILE_NAME), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
 	var dbUpdates []updates
 
-	var _ = db.Where("update_type = ?", "INSERT").Find(&dbUpdates)
+	var _ = Db.Where("update_type = ?", "INSERT").Find(&dbUpdates)
 
 	return dbUpdates
 }
 
 func GetDb24Update() []updatesjoin {
-	db, err := gorm.Open(sqlite.Open(DB_FILE_NAME), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
 	var dbUpdates []updatesjoin
 
-	var _ = db.Raw("select * from (select * from updates u left join winners w using(code) union all select * from winners w left join updates u using (code) where w.code is null) where date_time > datetime('now','-1 day') and amount != amount_before").Find(&dbUpdates)
+	var _ = Db.Raw("select * from (select * from updates u left join winners w using(code) union all select * from winners w left join updates u using (code) where w.code is null) where date_time > datetime('now','-1 day') and amount != amount_before").Find(&dbUpdates)
 
 	// var _ = db.Where("datetime > datetime('now','-1 day')").Find(&dbUpdates)
 

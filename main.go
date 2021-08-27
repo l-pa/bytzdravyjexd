@@ -10,11 +10,16 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 const WINNERS_URL = "https://www.mfsr.sk/components/mfsrweb/winners/data-ajax.jsp"
 
 var lastCronUpdate time.Time
+
+const DB_FILE_NAME = "slobodajexd.db"
+var Db, Err = gorm.Open(sqlite.Open(DB_FILE_NAME), &gorm.Config{})
 
 type StatusJSON struct {
 	Status   int32

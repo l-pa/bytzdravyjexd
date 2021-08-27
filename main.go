@@ -232,8 +232,8 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	s := gocron.NewScheduler(time.UTC)
-	s.Every(1).Day().At("11:00").Do(func ()  {
+	s := gocron.NewScheduler(time.Local)
+	s.Every(1).Day().At("09:30").Do(func ()  {
 		UpdateDbWinners()
 		lastCronUpdate = time.Now()
 		fmt.Println("Cron ✅")

@@ -178,10 +178,10 @@ func SumVillagesJSON(w http.ResponseWriter, req *http.Request) {
 		var a []VillagesJSON
 		for k, v := range villages { 
 			var c = GetDbVillage(k)
-			a = append(a, VillagesJSON{Village: k, TotalAmount: v, Lat: c.lat.String, Lon: c.long.String})
+			a = append(a, VillagesJSON{Village: k, TotalAmount: v, Lat: c.Lat.String, Lon: c.Long.String})
 		}
 
-		data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: villages})
+		data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: a})
 		w.Write(data)
 	}
 }

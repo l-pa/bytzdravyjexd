@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/guregu/null.v4"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -42,12 +42,11 @@ type updatesjoin struct {
 }
 
 type cities struct {
-	name   string
-	region null.String
-	lat    null.String
-	long   null.String
+	Name   string
+	Region sql.NullString
+	Lat    sql.NullString
+	Long   sql.NullString
 }
-
 
 type nominatimResponse []struct {
 	PlaceID     int      `json:"place_id"`
@@ -76,6 +75,7 @@ func UpdateDbWinners() {
 	latestWinners := getLatestWinners()
 
 	var winnerTmp winners
+
 	var cityTmp cities
 
 	for _, v := range latestWinners {
@@ -121,10 +121,10 @@ func UpdateDbWinners() {
 				log.Fatal(jsonErr)
 			}
 
-			if (len(c) > 0){
-				var _ = db.Create(cities{name: v.Village, region: null.StringFromPtr(nil), lat: null.StringFrom(c[0].Lat), long: null.StringFrom(c[0].Lon)})
+			if len(c) > 0 {
+				var _ = db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: true, String: c[0].Lat}, Long: sql.NullString{Valid: true, String: c[0].Lon}})
 			} else {
-				var _ = db.Create(cities{name: v.Village, region: null.StringFromPtr(nil), lat: null.StringFromPtr(nil),long: null.StringFromPtr(nil)})
+				var _ = db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: false}, Long: sql.NullString{Valid: false}})
 			}
 
 		}
@@ -166,11 +166,11 @@ func GetDbVillage(name string) cities {
 		panic("failed to connect database")
 	}
 
-	var dbVillages []cities
+	var dbVillages cities
 
-	var _ = db.First(&dbVillages).Where("name = ?", name)
+	db.First(&dbVillages, "name = ?", name)
 
-	return dbVillages[0]
+	return dbVillages
 }
 
 func GetDbUpdates() []updates {

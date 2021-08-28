@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
+	"github.com/rs/cors"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -226,22 +227,35 @@ func main() {
 		
 	})
 
-	http.HandleFunc("/", NotFoundHandler)
-	http.HandleFunc("/msfs", GetWinnersJSON)
-	http.HandleFunc("/villages", SumVillagesJSON)
-	http.HandleFunc("/names", SumNamesJSON)
-	http.HandleFunc("/db", GetDbWinnersJSON)
-	http.HandleFunc("/updates", GetDbUpdatesJSON)
-	http.HandleFunc("/inserts", GetDbInsertsJSON)
-	http.HandleFunc("/24", GetDbLast24UpdateJSON)
-	http.HandleFunc("/geojson", GetGeoJSON)
+	mux := http.NewServeMux()
 
-	http.HandleFunc("/cron", GetDbLastUpdateJSON)
+
+	mux.HandleFunc("/", NotFoundHandler)
+	mux.HandleFunc("/msfs", GetWinnersJSON)
+	mux.HandleFunc("/villages", SumVillagesJSON)
+	mux.HandleFunc("/names", SumNamesJSON)
+	mux.HandleFunc("/db", GetDbWinnersJSON)
+	mux.HandleFunc("/updates", GetDbUpdatesJSON)
+	mux.HandleFunc("/inserts", GetDbInsertsJSON)
+	mux.HandleFunc("/24", GetDbLast24UpdateJSON)
+	mux.HandleFunc("/geojson", GetGeoJSON)
+
+	mux.HandleFunc("/cron", GetDbLastUpdateJSON)
+
+
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:1234", "http://localhost"},
+		AllowCredentials: true,
+		// Enable Debugging for testing, consider disabling in production
+		Debug: true,
+	})
+
+	handler := c.Handler(mux)
 
 	UpdateDbWinners()
 	
 	lastCronUpdate = time.Now()
 	s.StartAsync()
 	fmt.Println("Server http://localhost:5000 ✅")
-	http.ListenAndServe(":5000", nil)
+	http.ListenAndServe(":5000", handler)
 }

@@ -199,6 +199,13 @@ func GetDbLastUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+func GetGeoJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	data, _ := json.Marshal(GetGeoJson())
+	w.Write(data)
+}
+
 func GetDbLast24UpdateJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: GetDb24Update()})
@@ -227,6 +234,7 @@ func main() {
 	http.HandleFunc("/updates", GetDbUpdatesJSON)
 	http.HandleFunc("/inserts", GetDbInsertsJSON)
 	http.HandleFunc("/24", GetDbLast24UpdateJSON)
+	http.HandleFunc("/geojson", GetGeoJSON)
 
 	http.HandleFunc("/cron", GetDbLastUpdateJSON)
 

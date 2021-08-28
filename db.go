@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -56,6 +57,27 @@ type names struct {
 	Name string
 	Amount int64
 	Count int64
+}
+
+type geoJson struct {
+	Type string `json:"type"`
+	Features []features `json:"features"`
+}
+
+type features struct {
+	Type string `json:"type"`
+	Geometry geometry `json:"geometry"`
+	Properties geoProperties `json:"properties"`
+}
+
+type geometry struct {
+	Type string `json:"type"`
+	Coordinates [2]float64 `json:"coordinates"`
+}
+
+type geoProperties struct {
+	Amount int64 `json:"amount"`
+	Village string `json:"village"`
 }
 
 
@@ -194,4 +216,26 @@ func GetDb24Update() []updatesjoin {
 	// var _ = db.Where("datetime > datetime('now','-1 day')").Find(&dbUpdates)
 
 	return dbUpdates
+}
+
+func GetGeoJson() geoJson{
+	dbVillages := GetDbVillageJoinWinners()
+	var resGeoJson geoJson
+	resGeoJson.Type = "FeatureCollection"
+
+	var geoJsonFeatures []features
+
+	for _, v := range dbVillages {
+		lat, errLat := strconv.ParseFloat(v.Lat.String, 64)
+		long, errLong :=strconv.ParseFloat(v.Long.String, 64)
+
+		if errLat == nil && errLong == nil {
+			geoJsonFeatures = append(geoJsonFeatures, features{Type: "Feature", Geometry: geometry{Type: "Point", Coordinates: [2]float64{long, lat}}, Properties: geoProperties{Amount: v.Total, Village: v.Name}})
+		}
+
+	}
+	resGeoJson.Features = geoJsonFeatures
+
+	
+	return resGeoJson
 }

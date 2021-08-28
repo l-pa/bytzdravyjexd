@@ -52,6 +52,13 @@ type winnersCitiesJoin struct {
 	Total int64
 }
 
+type names struct {
+	Name string
+	Amount int64
+	Count int64
+}
+
+
 type nominatimResponse []struct {
 	PlaceID     int64    `json:"place_id"`
 	Licence     string   `json:"licence"`
@@ -158,12 +165,16 @@ func GetDbVillageJoinWinners() []winnersCitiesJoin {
 	return dbVillages
 }
 
+func GetDbNames() []names {
+	var dbNames []names	
+	Db.Select("name", "sum(amount) as amount", "count(name) as count").Table("winners").Group("name").Order("count desc").Find(&dbNames)
+	return dbNames
+}
+
 
 func GetDbUpdates() []updates {
 	var dbUpdates []updates
-
 	var _ = Db.Where("update_type = ?", "UPDATE").Find(&dbUpdates)
-
 	return dbUpdates
 }
 

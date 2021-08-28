@@ -178,24 +178,14 @@ func SumVillagesJSON(w http.ResponseWriter, req *http.Request) {
 func SumNamesJSON(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	winners := GetDbWinners()
+	winners := GetDbNames()
 
-	names := make(map[string]int)
-
-	for _, winner := range winners {
-		if _, ok := names[winner.Name]; ok {
-			names[winner.Name] += 1
-		} else {
-			names[winner.Name] = 1
-		}
-	}
-
-	if len(names) == 0 {
+	if len(winners) == 0 {
 		data, _ := json.Marshal(StatusJSON{Status: -1, Text: "No data"})
 		w.Write(data)
 		return
 	} else {
-		data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: names})
+		data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: winners})
 		w.Write(data)
 	}
 }

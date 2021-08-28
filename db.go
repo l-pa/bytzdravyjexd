@@ -46,10 +46,10 @@ type cities struct {
 }
 
 type nominatimResponse []struct {
-	PlaceID     int      `json:"place_id"`
+	PlaceID     int64    `json:"place_id"`
 	Licence     string   `json:"licence"`
 	OsmType     string   `json:"osm_type"`
-	OsmID       int      `json:"osm_id"`
+	OsmID       int64      `json:"osm_id"`
 	Boundingbox []string `json:"boundingbox"`
 	Lat         string   `json:"lat"`
 	Lon         string   `json:"lon"`

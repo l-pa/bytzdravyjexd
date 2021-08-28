@@ -45,6 +45,13 @@ type cities struct {
 	Long   sql.NullString
 }
 
+type winnersCitiesJoin struct {
+	Name string
+	Lat sql.NullString
+	Long sql.NullString
+	Total int64
+}
+
 type nominatimResponse []struct {
 	PlaceID     int64    `json:"place_id"`
 	Licence     string   `json:"licence"`
@@ -141,19 +148,16 @@ func UpdateDbWinners() {
 
 func GetDbWinners() []winners {
 	var dbWinners []winners
-
 	var _ = Db.Find(&dbWinners)
-
 	return dbWinners
 }
 
-func GetDbVillage(name string) cities {
-	var dbVillages cities
-
-	Db.First(&dbVillages, "name = ?", name)
-
+func GetDbVillageJoinWinners() []winnersCitiesJoin {
+	var dbVillages []winnersCitiesJoin	
+	Db.Select("cities.name", "cities.lat", "cities.long", "sum(winners.amount) as total").Table("winners").Joins("LEFT JOIN cities ON cities.name = winners.city").Group("cities.name").Order("total desc").Find(&dbVillages)
 	return dbVillages
 }
+
 
 func GetDbUpdates() []updates {
 	var dbUpdates []updates

@@ -162,31 +162,15 @@ func GetDbInsertsJSON(w http.ResponseWriter, req *http.Request) {
 func SumVillagesJSON(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	winners := GetDbWinners()
+	count := GetDbVillageJoinWinners()
 
-	villages := make(map[string]int)
 
-	for _, winner := range winners {
-		if _, ok := villages[winner.City]; ok {
-			villages[winner.City] += int(winner.Amount)
-		} else {
-			villages[winner.City] = int(winner.Amount)
-		}
-	}
-
-	if len(villages) == 0 {
+	if len(count) == 0 {
 		data, _ := json.Marshal(StatusJSON{Status: -1, Text: "No data"})
 		w.Write(data)
 		return
 	} else {
-
-		var a []VillagesJSON
-		for k, v := range villages { 
-			var c = GetDbVillage(k)
-			a = append(a, VillagesJSON{Village: k, TotalAmount: v, Lat: c.Lat.String, Lon: c.Long.String})
-		}
-
-		data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: a})
+		data, _ := json.Marshal(StatusJSON{Status: 0, Text: "Ok", Response: count})
 		w.Write(data)
 	}
 }

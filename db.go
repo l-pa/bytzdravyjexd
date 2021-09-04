@@ -2,14 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -104,58 +99,58 @@ func UpdateDbWinners() {
 
 	var winnerTmp winners
 
-	var cityTmp cities
+	// var cityTmp cities
 
 	for _, v := range latestWinners {
 
-		var citiesResult = Db.First(&cityTmp, "name = ?", v.Village)
+		// var citiesResult = Db.First(&cityTmp, "name = ?", v.Village)
 
-		if errors.Is(citiesResult.Error, gorm.ErrRecordNotFound) {
+		// if errors.Is(citiesResult.Error, gorm.ErrRecordNotFound) {
 
-			var cityName = strings.Replace(v.Village, " ", "%20", -1)
+		// 	var cityName = strings.Replace(v.Village, " ", "%20", -1)
 
-			httpClient := http.Client{
-				Timeout: time.Second * 10,
-			}
+		// 	httpClient := http.Client{
+		// 		Timeout: time.Second * 10,
+		// 	}
 
-			req, err := http.NewRequest(http.MethodGet, "https://nominatim.openstreetmap.org/search?q="+cityName+"&countrycodes=sk&format=json", nil)
+		// 	req, err := http.NewRequest(http.MethodGet, "https://nominatim.openstreetmap.org/search?q="+cityName+"&countrycodes=sk&format=json", nil)
 
-			if err != nil {
-				log.Fatal(err)
-			}
+		// 	if err != nil {
+		// 		log.Fatal(err)
+		// 	}
 
-			req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Mobile/15E148 Safari/604.1")
+		// 	req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Mobile/15E148 Safari/604.1")
 
-			res, getErr := httpClient.Do(req)
+		// 	res, getErr := httpClient.Do(req)
 
-			if getErr != nil {
-				log.Fatal(getErr)
-			}
+		// 	if getErr != nil {
+		// 		log.Fatal(getErr)
+		// 	}
 
-			if res.Body != nil {
-				defer res.Body.Close()
-			}
+		// 	if res.Body != nil {
+		// 		defer res.Body.Close()
+		// 	}
 
-			body, readErr := ioutil.ReadAll(res.Body)
+		// 	body, readErr := ioutil.ReadAll(res.Body)
 
-			if readErr != nil {
-				log.Fatal(readErr)
-			}
+		// 	if readErr != nil {
+		// 		log.Fatal(readErr)
+		// 	}
 
-			c := nominatimResponse{}
+		// 	c := nominatimResponse{}
 
-			jsonErr := json.Unmarshal(body, &c)
-			if jsonErr != nil {
-				log.Fatal(jsonErr)
-			}
+		// 	jsonErr := json.Unmarshal(body, &c)
+		// 	if jsonErr != nil {
+		// 		log.Fatal(jsonErr)
+		// 	}
 
-			if len(c) > 0 {
-				var _ = Db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: true, String: c[0].Lat}, Long: sql.NullString{Valid: true, String: c[0].Lon}})
-			} else {
-				var _ = Db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: false}, Long: sql.NullString{Valid: false}})
-			}
+		// 	if len(c) > 0 {
+		// 		var _ = Db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: true, String: c[0].Lat}, Long: sql.NullString{Valid: true, String: c[0].Lon}})
+		// 	} else {
+		// 		var _ = Db.Create(cities{Name: v.Village, Region: sql.NullString{Valid: false}, Lat: sql.NullString{Valid: false}, Long: sql.NullString{Valid: false}})
+		// 	}
 
-		}
+		// }
 
 		result := Db.First(&winnerTmp, "code = ? AND amount = ?", v.Code, v.Amount)
 
